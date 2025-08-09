@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statut des Services - AlertesPedo</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .header .url {
+            color: #3b82f6;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .overall-status {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .status-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-operational { 
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+        .status-degraded { 
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .status-down { 
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .service-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .service-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .service-url {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .uptime-section {
+            margin: 20px 0;
+        }
+
+        .uptime-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .uptime-percentage {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #059669;
+        }
+
+        .uptime-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(226, 232, 240, 0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .uptime-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 8px;
+            transition: width 0.8s ease;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .service-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(100, 116, 139, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(100, 116, 139, 0.3);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .last-updated {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .service-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-overview {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Statut des Services</h1>
+            <p>Surveillance en temps réel des services AlertesPedo</p>
+            <div class="url">statuts.alertespedo.com</div>
+        </div>
+
+        <div class="overall-status">
+            <div id="overall-status" class="status-indicator">
+                <div class="status-dot status-operational"></div>
+                <span>Chargement du statut global...</span>
+            </div>
+        </div>
+
+        <div id="stats-overview" class="stats-overview" style="display: none;">
+            <div class="stat-card">
+                <div id="total-monitors" class="stat-value">-</div>
+                <div class="stat-label">Services surveillés</div>
+            </div>
+            <div class="stat-card">
+                <div id="services-up" class="stat-value">-</div>
+                <div class="stat-label">Services actifs</div>
+            </div>
+            <div class="stat-card">
+                <div id="avg-uptime" class="stat-value">-</div>
+                <div class="stat-label">Disponibilité moyenne</div>
+            </div>
+            <div class="stat-card">
+                <div id="avg-response" class="stat-value">-</div>
+                <div class="stat-label">Temps de réponse moyen</div>
+            </div>
+        </div>
+
+        <div id="services-container" class="services-grid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>🔄 Chargement des données de surveillance UptimeRobot...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div id="last-updated" class="last-updated">Dernière mise à jour: Chargement...</div>
+            <button class="refresh-btn" onclick="loadMonitorData()">🔄 Actualiser les données</button>
+            <div style="margin-top: 15px; font-size: 0.8rem; opacity: 0.7;">
+                Propulsé par UptimeRobot • Mis à jour automatiquement toutes les 2 minutes
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration UptimeRobot avec vos vraies clés API
+        const CONFIG = {
+            // Utilisez la Read-only API key pour plus de sécurité
+            apiKey: 'ur3066093-64f298192588c57c9428ef1c',
+            apiUrl: 'https://api.uptimerobot.com/v2/getMonitors'
+        };
+
+        // Fonction principale pour charger les données depuis UptimeRobot
+        async function loadMonitorData() {
+            const container = document.getElementById('services-container');
+            const overallStatus = document.getElementById('overall-status');
+            
+            try {
+                // Appel direct à l'API UptimeRobot
+                const formData = new FormData();
+                formData.append('api_key', CONFIG.apiKey);
+                formData.append('format', 'json');
+                formData.append('logs', '1');
+                formData.append('response_times', '1');
+                formData.append('response_times_limit', '24');
+                formData.append('all_time_uptime_ratio', '1');
+                
+                const response = await fetch(CONFIG.apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.stat === 'ok') {
+                    displayMonitorData(data.monitors);
+                    updateOverallStatus(data.monitors);
+                    updateStatsOverview(data.monitors);
+                    document.getElementById('stats-overview').style.display = 'grid';
+                } else {
+                    throw new Error(`Erreur API: ${data.error?.message || 'Réponse invalide'}`);
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+                container.innerHTML = `
+                    <div class="error">
+                        ⚠️ Impossible de charger les données de surveillance.<br>
+                        <small>Erreur: ${error.message}</small><br>
+                        <small>Vérifiez votre connexion internet et réessayez.</small>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('last-updated').textContent = 
+                `Dernière mise à jour: ${new Date().toLocaleString('fr-FR')}`;
+        }
+
+        // Affichage des données de surveillance
+        function displayMonitorData(monitors) {
+            const container = document.getElementById('services-container');
+            
+            if (!monitors || monitors.length === 0) {
+                container.innerHTML = `
+                    <div class="error">
+                        📭 Aucun monitor configuré dans UptimeRobot.<br>
+                        <small>Ajoutez vos premiers monitors dans votre tableau de bord UptimeRobot.</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = monitors.map(monitor => {
+                const statusInfo = getStatusInfo(monitor.status);
+                const uptimeRatio = monitor.all_time_uptime_ratio || '0.00';
+                const avgResponseTime = calculateAverageResponseTime(monitor.response_times);
+                
+                return `
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div>
+                                <div class="service-name">${monitor.friendly_name}</div>
+                                <div class="service-url">${monitor.url}</div>
+                            </div>
+                            <div class="service-status">
+                                <div class="status-dot ${statusInfo.class}"></div>
+                                <span style="color: ${statusInfo.color}">${statusInfo.text}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="uptime-section">
+                            <div class="uptime-header">
+                                <span style="color: #64748b; font-weight: 600;">Disponibilité globale</span>
+                                <span class="uptime-percentage">${uptimeRatio}%</span>
+                            </div>
+                            <div class="uptime-bar">
+                                <div class="uptime-fill" style="width: ${uptimeRatio}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="service-metrics">
+                            <div class="metric-item">
+                                <div class="metric-value">${Math.round(uptimeRatio)}%</div>
+                                <div class="metric-label">Uptime</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${avgResponseTime}ms</div>
+                                <div class="metric-label">Temps de réponse</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${monitor.interval || 300}s</div>
+                                <div class="metric-label">Intervalle</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${getMonitorType(monitor.type)}</div>
+                                <div class="metric-label">Type</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Mise à jour du statut global
+        function updateOverallStatus(monitors) {
+            const overallStatus = document.getElementById('overall-status');
+            const downServices = monitors.filter(m => m.status === 0).length;
+            const pausedServices = monitors.filter(m => m.status === 1).length;
+            const upServices = monitors.filter(m => m.status === 2).length;
+            
+            let statusInfo;
+            if (downServices > 0) {
+                statusInfo = {
+                    class: 'status-down',
+                    text: `${downServices} service(s) indisponible(s)`,
+                    color: '#ef4444'
+                };
+            } else if (pausedServices > 0) {
+                statusInfo = {
+                    class: 'status-degraded',
+                    text: `${pausedServices} service(s) en pause`,
+                    color: '#f59e0b'
+                };
+            } else if (upServices > 0) {
+                statusInfo = {
+                    class: 'status-operational',
+                    text: 'Tous les services sont opérationnels',
+                    color: '#10b981'
+                };
+            } else {
+                statusInfo = {
+                    class: 'status-degraded',
+                    text: 'Aucun service configuré',
+                    color: '#64748b'
+                };
+            }
+            
+            overallStatus.innerHTML = `
+                <div class="status-dot ${statusInfo.class}"></div>
+                <span style="color: ${statusInfo.color}">${statusInfo.text}</span>
+            `;
+        }
+
+        // Mise à jour des statistiques générales
+        function updateStatsOverview(monitors) {
+            const totalMonitors = monitors.length;
+            const servicesUp = monitors.filter(m => m.status === 2).length;
+            const avgUptime = monitors.reduce((sum, m) => sum + parseFloat(m.all_time_uptime_ratio || 0), 0) / totalMonitors;
+            const avgResponse = monitors.reduce((sum, m) => {
+                const responseTime = calculateAverageResponseTime(m.response_times);
+                return sum + parseInt(responseTime);
+            }, 0) / totalMonitors;
+
+            document.getElementById('total-monitors').textContent = totalMonitors;
+            document.getElementById('services-up').textContent = servicesUp;
+            document.getElementById('avg-uptime').textContent = avgUptime.toFixed(1) + '%';
+            document.getElementById('avg-response').textContent = Math.round(avgResponse) + 'ms';
+        }
+
+        // Helper pour calculer le temps de réponse moyen
+        function calculateAverageResponseTime(responseTimes) {
+            if (!responseTimes || responseTimes.length === 0) return '0';
+            
+            const times = responseTimes.map(rt => parseInt(rt.value)).filter(t => !isNaN(t));
+            if (times.length === 0) return '0';
+            
+            const average = times.reduce((sum, time) => sum + time, 0) / times.length;
+            return Math.round(average).toString();
+        }
+
+        // Helper pour obtenir les infos de statut
+        function getStatusInfo(status) {
+            switch(parseInt(status)) {
+                case 2: return { class: 'status-operational', text: 'Opérationnel', color: '#10b981' };
+                case 1: return { class: 'status-degraded', text: 'En pause', color: '#f59e0b' };
+                case 0: return { class: 'status-down', text: 'Indisponible', color: '#ef4444' };
+                default: return { class: 'status-degraded', text: 'Inconnu', color: '#64748b' };
+            }
+        }
+
+        // Helper pour obtenir le type de monitor
+        function getMonitorType(type) {
+            const types = {
+                1: 'HTTP(s)',
+                2: 'Keyword',
+                3: 'Ping',
+                4: 'Port',
+                5: 'Heartbeat'
+            };
+            return types[type] || 'Autre';
+        }
+
+        // Chargement initial et actualisation automatique
+        loadMonitorData();
+        
+        // Actualise automatiquement toutes les 2 minutes
+        setInterval(loadMonitorData, 120000);
+        
+        // Actualise quand la page redevient visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                loadMonitorData();
+            }
+        });
+    </script>
+</body>
+</html>
