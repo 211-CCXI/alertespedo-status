@@ -666,6 +666,26 @@
             <canvas id="uptimeChart" width="400" height="150"></canvas>
         </div>
 
+        <!-- Section Données Temps Réel UptimeRobot -->
+        <div class="chart-card">
+            <div class="chart-title">📊 Données UptimeRobot en Temps Réel</div>
+            <div style="position: relative; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
+                <iframe 
+                    id="uptimerobotFrame"
+                    src="https://stats.uptimerobot.com/VOTRE_ID_ICI"
+                    width="100%" 
+                    height="600" 
+                    frameborder="0"
+                    style="border-radius: 15px; background: white;"
+                    loading="lazy">
+                </iframe>
+                <div id="iframe-fallback" style="display: none; text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <p>⚠️ Configurez votre Public Status Page UptimeRobot</p>
+                    <p><small>Remplacez "VOTRE_ID_ICI" par votre vraie URL dans le code</small></p>
+                </div>
+            </div>
+        </div>
+
         <div id="services-container" class="services-grid">
             <div class="loading">
                 <div class="loading-spinner"></div>
@@ -704,6 +724,9 @@
             apiKey: 'ur3066093-64f298192588c57c9428ef1c',
             apiUrl: 'https://api.uptimerobot.com/v2/getMonitors',
             
+            // URL de votre Public Status Page UptimeRobot
+            publicStatusUrl: 'https://stats.uptimerobot.com/fRll0FFg9m'
+            
             // Paramètres pour éviter les rate limits
             retryAttempts: 3,
             retryDelay: 5000
@@ -721,9 +744,10 @@
             initializePeriodFilters();
             initializeCharts();
             loadMonitorData();
+            setupUptimeRobotFrame();
             
-            // Actualisation automatique
-            setInterval(loadMonitorData, 120000);
+            // Actualisation automatique toutes les 5 minutes (au lieu de 2) pour éviter rate limits
+            setInterval(loadMonitorData, 300000);
             
             // Actualise quand la page redevient visible
             document.addEventListener('visibilitychange', function() {
@@ -732,6 +756,41 @@
                 }
             });
         });
+
+        // Configuration de l'iframe UptimeRobot
+        function setupUptimeRobotFrame() {
+            const iframe = document.getElementById('uptimerobotFrame');
+            const fallback = document.getElementById('iframe-fallback');
+            
+            // Vérifier si l'URL est configurée
+            if (CONFIG.publicStatusUrl.includes('VOTRE_ID_ICI')) {
+                iframe.style.display = 'none';
+                fallback.style.display = 'block';
+                fallback.innerHTML = `
+                    <h3>🔧 Configuration requise</h3>
+                    <p>Créez votre Public Status Page dans UptimeRobot :</p>
+                    <ol style="text-align: left; max-width: 400px; margin: 20px auto;">
+                        <li>Allez dans UptimeRobot → Public Status Pages</li>
+                        <li>Créez une nouvelle page publique</li>
+                        <li>Copiez l'URL générée</li>
+                        <li>Remplacez "VOTRE_ID_ICI" dans le code</li>
+                    </ol>
+                    <p><small>En attendant, les données simulées s'affichent ci-dessous</small></p>
+                `;
+            } else {
+                iframe.src = CONFIG.publicStatusUrl;
+                
+                // Gérer les erreurs de chargement
+                iframe.onerror = function() {
+                    iframe.style.display = 'none';
+                    fallback.style.display = 'block';
+                    fallback.innerHTML = `
+                        <p>⚠️ Impossible de charger la page UptimeRobot</p>
+                        <p><small>Vérifiez l'URL : ${CONFIG.publicStatusUrl}</small></p>
+                    `;
+                };
+            }
+        }
 
         // Gestion du thème
         function toggleTheme() {
